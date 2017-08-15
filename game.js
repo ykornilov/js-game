@@ -85,7 +85,7 @@ class Level {
 		this.finishDelay = 1;
 		this.player = this.actors.find(item => item.type === 'player');
 		if (this.player) {
-			this.actors.splice(this.actors.indexOf(this.player), 1);
+			this.removeActor(this.player);
 		} else {
 			this.player = new Player();
 		}
@@ -108,7 +108,7 @@ class Level {
 			throw new Error('В метод actorAt должен быть передан объект типа Actor');
 		}
 
-		return this.actors.find(item => item.isIntersect(actor) && (item !== actor) && (item !== this.player));
+		return this.actors.find(item => item.isIntersect(actor) && (item !== actor));
 	}
 
 	obstacleAt(pos, size) {
@@ -144,23 +144,77 @@ class Level {
 		return !this.actors.find(item => item.type === type);
 	}
 
-	playerTouched(typeOfBarrier, actor) {
+	playerTouched(obstacle, actor) {
 		if (this.status) {
 			return;
 		}
 
-		if (typeOfBarrier === 'lava' || typeOfBarrier === 'fireball') {
+		if (obstacle === 'lava' || obstacle === 'fireball') {
 			this.status = 'lost';
 			return;
 		}
 
-		if (typeOfBarrier === 'coin' && actor.type === 'coin') {
+		if (obstacle === 'coin' && actor && actor.type === 'coin') {
 			this.removeActor(actor);
 			if (this.actors.find(item => item.type === 'coin') === undefined) {
 				this.status = 'won';
 				return;
 			}
 		}
+	}
+}
+
+class LevelParser {
+	constructor(actorDict = {}) {
+		this.actorDict = actorDict;
+	}
+
+	actorFromSymbol(symbol) {
+		if (symbol === undefined || !(symbol in this.actorDict)) {
+			return;
+		}
+		return this.actorDict[symbol];
+	}
+
+	obstacleFromSymbol(symbol) {
+		switch(symbol) {
+			case 'x':
+				return 'wall';
+			case '!':
+				return 'lava';
+			default:
+				return;
+		}
+	}
+
+	createGrid(plan = []) {
+		if (Array.isArray(plan) && plan.length === 0) {
+			return [];
+		}
+
+		return plan.map(row => row.split('').map(symbol => this.obstacleFromSymbol(symbol)));
+	}
+
+	createActors(plan) {
+		if (Array.isArray(plan) && plan.length === 0) {
+			return [];
+		}
+
+		return plan.reduce((actors, row, y) => {
+														row.split('')
+														.forEach((symbol, x) => {
+                    															const TypeOfObj = this.actorFromSymbol(symbol);
+                    															if (TypeOfObj && typeof TypeOfObj === 'function' && Actor.prototype.isPrototypeOf(new TypeOfObj())) {
+                    																actors.push(new TypeOfObj(new Vector(x, y)));
+                    															}
+                    														});
+                    									return actors;
+                  		                        	}
+									                , []);	
+	}
+
+	parse(plan) {
+		return new Level(this.createGrid(plan), this.createActors(plan));
 	}
 }
 
