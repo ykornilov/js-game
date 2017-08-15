@@ -259,3 +259,53 @@ class Coin extends Actor {
 	}	
 }
 
+class Fireball extends Actor {
+	constructor(pos = new Vector(), speed = new Vector()) {
+		super(pos, new Vector(1, 1), speed);
+	}
+
+	get type() {
+		return 'fireball';
+	}
+
+	getNextPosition(time = 1) {
+		return this.pos.plus(this.speed.times(time));
+	}
+
+	handleObstacle() {
+		this.speed.x *= -1;
+		this.speed.y *= -1; 
+	}
+
+	act(time, level) {
+		const nextPos = this.getNextPosition(time);
+		if (level.obstacleAt(nextPos, this.size)) {
+			this.handleObstacle();
+		} else {
+			this.pos = nextPos;
+		}
+	}
+}
+
+class HorizontalFireball extends Fireball {
+	constructor(pos = new Vector()) {
+		super(pos, new Vector(2, 0));
+	}
+}
+
+class VerticalFireball extends Fireball {
+	constructor(pos = new Vector()) {
+		super(pos, new Vector(0, 2));
+	}
+}
+
+class FireRain extends Fireball {
+	constructor(pos = new Vector()) {
+		super(pos, new Vector(0, 3));
+		this.startPos = pos;
+	}
+
+	handleObstacle() {
+		this.pos = this.startPos;
+	}
+}
