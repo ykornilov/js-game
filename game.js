@@ -77,3 +77,131 @@ class Actor {
 	}
 }
 
+class Level {
+	constructor(grid = [], actors = []) {
+		this.grid = grid;
+		this.actors = actors;
+		this.status = null;
+		this.finishDelay = 1;
+		this.player = this.actors.find(item => item.type === 'player');
+		if (this.player) {
+			this.actors.splice(this.actors.indexOf(this.player), 1);
+		} else {
+			this.player = new Player();
+		}
+	}
+
+	get height() {
+		return this.grid.length;
+	}
+
+	get width() {
+		return this.grid.reduce((max, line) => Math.max(max, line.length), 0);
+	}
+
+	isFinished() {
+		return this.status !== null && this.finishDelay < 0;
+	}
+
+	actorAt(actor) {
+		if (!(actor instanceof Actor)) {
+			throw new Error('В метод actorAt должен быть передан объект типа Actor');
+		}
+
+		return this.actors.find(item => item.isIntersect(actor) && (item !== actor) && (item !== this.player));
+	}
+
+	obstacleAt(pos, size) {
+		if (!(pos instanceof Vector) || !(size instanceof Vector)) {
+			throw new Error('В метод obstacleAt должны передаваться аргументы типа Vector');
+		}
+
+		if (pos.y < 0 || pos.x < 0 || (pos.x + size.x) >= this.width) {
+			return 'wall';
+		} else if (pos.y + size.y >= this.height) {
+			return 'lava';
+		}
+
+		for (let y = Math.floor(pos.y); y < Math.ceil(pos.y + size.y); y++) {
+			for (let x = Math.floor(pos.x); x < Math.ceil(pos.x + size.x); x++) {
+				if (this.grid[y][x] === 'wall') {
+					return 'wall';
+				} else if (this.grid[y][x] === 'lava') {
+					return 'lava';
+				}
+			}
+		}
+	}
+
+	removeActor(actor) {
+		let index = this.actors.indexOf(actor);
+		if (index !== -1) {
+			this.actors.splice(index, 1);
+		}
+	}
+
+	noMoreActors(type) {
+		return !this.actors.find(item => item.type === type);
+	}
+
+	playerTouched(typeOfBarrier, actor) {
+		if (this.status) {
+			return;
+		}
+
+		if (typeOfBarrier === 'lava' || typeOfBarrier === 'fireball') {
+			this.status = 'lost';
+			return;
+		}
+
+		if (typeOfBarrier === 'coin' && actor.type === 'coin') {
+			this.removeActor(actor);
+			if (this.actors.find(item => item.type === 'coin') === undefined) {
+				this.status = 'won';
+				return;
+			}
+		}
+	}
+}
+
+class Player extends Actor {
+	constructor(pos = new Vector()) {
+		super(pos.plus(new Vector(0, -0.5)), new Vector(0.8, 1.5), new Vector(0, 0));
+	}
+
+	get type() {
+		return 'player';
+	}
+}
+
+class Coin extends Actor {
+	constructor(pos = new Vector()) {
+		super(pos.plus(new Vector(0.2, 0.1)), new Vector(0.6, 0.6), new Vector(0, 0));
+
+		this.springSpeed = 8;
+		this.springDist = 0.07;
+		this.spring = Math.random() * 2 * Math.PI;
+	}
+
+	get type() {
+		return 'coin';
+	}
+
+	updateSpring(time = 1) {
+		this.spring += this.springSpeed * time;
+	}
+
+	getSpringVector() {
+		return new Vector(0, Math.sin(this.spring) * this.springDist);
+	}
+
+	getNextPosition(time = 1) {
+		this.updateSpring(time);
+		return this.pos.plus(this.getSpringVector());
+	}
+
+	act(time) {
+		this.pos = this.getNextPosition(time);
+	}	
+}
+
