@@ -84,11 +84,9 @@ class Level {
 		this.status = null;
 		this.finishDelay = 1;
 		this.player = this.actors.find(item => item.type === 'player');
-		if (this.player) {
-			this.removeActor(this.player);
-		} else {
+		if (this.player === undefined) {
 			this.player = new Player();
-		}
+		} 
 	}
 
 	get height() {
@@ -309,3 +307,30 @@ class FireRain extends Fireball {
 		this.pos = this.startPos;
 	}
 }
+
+
+const actorDict = {
+  '@': Player,
+  'v': FireRain,
+  'o': Coin,
+  '=': HorizontalFireball,
+  '|': VerticalFireball
+}
+const parser = new LevelParser(actorDict);
+
+loadLevels()
+.then(JSON.parse)
+.then(schemas => runGame(schemas, parser, DOMDisplay))
+.then(() => alert('Вы выиграли приз!'))
+.catch(err => {
+	switch(err.name) {
+		case 'Error':
+			alert('Ошибка при чтении файла со схемами уровней');
+			break;
+		case 'SyntaxError':
+			alert('Ошибка при разборе файла со схемой уровней');
+			break;
+		default:
+			alert(err);
+	}
+});
