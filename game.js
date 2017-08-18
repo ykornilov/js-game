@@ -67,17 +67,10 @@ class Actor {
 			return false;
 		}
 
-		if (((actor.left >= this.left && actor.left < this.right) && (actor.top >= this.top && actor.top < this.bottom)) ||
-			((actor.right > this.left && actor.right <= this.right) && (actor.top >= this.top && actor.top < this.bottom)) ||
-			((actor.left >= this.left && actor.left < this.right) && (actor.bottom > this.top && actor.bottom <= this.bottom)) ||
-			((actor.right > this.left && actor.right <= this.right) && (actor.bottom > this.top && actor.bottom <= this.bottom)) ||
-			((this.left >= actor.left && this.left < actor.right) && (this.top >= actor.top && this.top < actor.bottom)) ||
-			((this.right > actor.left && this.right <= actor.right) && (this.top >= actor.top && this.top < actor.bottom)) ||
-			((this.left >= actor.left && this.left < actor.right) && (this.bottom > actor.top && this.bottom <= actor.bottom)) ||
-			((this.right > actor.left && this.right <= actor.right) && (this.bottom > actor.top && this.bottom <= actor.bottom))) {
-			return true;
+		if (actor.left >= this.right || actor.right <= this.left || actor.top >= this.bottom || actor.bottom <= this.top) {
+			return false;
 		}
-		return false;
+		return true;
 	}
 }
 
