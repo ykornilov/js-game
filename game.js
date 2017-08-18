@@ -199,16 +199,15 @@ class LevelParser {
 		}
 
 		return plan.reduce((actors, row, y) => {
-														row.split('')
-														.forEach((symbol, x) => {
-                    															const TypeOfObj = this.actorFromSymbol(symbol);
-                    															if (TypeOfObj && typeof TypeOfObj === 'function' && Actor.prototype.isPrototypeOf(new TypeOfObj())) {
-                    																actors.push(new TypeOfObj(new Vector(x, y)));
-                    															}
-                    														});
-                    									return actors;
-                  		                        	}
-									                , []);	
+            row.split('')
+                .forEach((symbol, x) => {
+                    const TypeOfObj = this.actorFromSymbol(symbol);
+                    if (TypeOfObj && typeof TypeOfObj === 'function' && Actor.prototype.isPrototypeOf(new TypeOfObj())) {
+                        actors.push(new TypeOfObj(new Vector(x, y)));
+                    }
+                });
+            return actors;
+        }, []);
 	}
 
 	parse(plan) {
