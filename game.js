@@ -59,6 +59,12 @@ class Actor {
 			throw new Error('Не передан аргумент для метода isIntersect или аргумент не является объектом типа Actor');
 		}
 
+		// сравнение с actor лучше отдельным if всё же
+		// вот это условие
+		// actor.left >= this.right || actor.right <= this.left || actor.top >= this.bottom || actor.bottom <= this.top
+		// можно обратить и написать просто return <условие>
+		// чтобы обратить условие нужно заменить || на && и операторы сравнения на противоположные
+		// >= на <, <= на >
 		if (actor === this || actor.left >= this.right || actor.right <= this.left || actor.top >= this.bottom || actor.bottom <= this.top) {
 			return false;
 		}
@@ -86,6 +92,7 @@ class Level {
 			throw new Error('В метод actorAt должен быть передан объект типа Actor');
 		}
 
+		// (item !== actor) - лишнее условие
 		return this.actors.find(item => item.isIntersect(actor) && (item !== actor));
 	}
 
@@ -112,6 +119,11 @@ class Level {
 
 		for (let y = yTopFloor; y < yBottomCeil; y++) {
 			for (let x = xLeftFloor; x < xRightCeil; x++) {
+				// не совсем правильная проверка
+				// в this.grid[y][x] может быть только wall или lava,
+				// так что достаточно проверить, что ячейка не пустая
+				// иначе при добавлении нового препятствия придётся вносить изменения
+				// в два места из за дублирования логики
 				if (this.grid[y][x] !== 'wall' && this.grid[y][x] !== 'lava') {
 					continue;
 				}
@@ -141,6 +153,10 @@ class Level {
 			return;
 		}
 
+		// проверку actor в принципе можно убрать -
+		// предполагается, что он будет всегда передаваться,
+		// а если где-то его всё таки не передадут, то код не выдаст ошибку
+		// и будет сложнее заметить баг
 		if (obstacle === 'coin' && actor && actor.type === 'coin') {
 			this.removeActor(actor);
 			if (this.noMoreActors('coin')) {
@@ -174,9 +190,13 @@ class LevelParser {
 
 	createActors(plan) {
 		return plan.reduce((actors, row, y) => {
+			// здесь можно использовать обычный цикл for,
+			// чтобы лишний раз не создавать массив из строки
             row.split('')
                 .forEach((symbol, x) => {
                     const TypeOfObj = this.actorFromSymbol(symbol);
+                    // здесь достаточно typeof
+					// typeof undefined === 'function' -> false
                     if (TypeOfObj && typeof TypeOfObj === 'function') {
                     	const actor = new TypeOfObj(new Vector(x, y));
                     	if (actor instanceof Actor) {
