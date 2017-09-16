@@ -59,16 +59,11 @@ class Actor {
 			throw new Error('Не передан аргумент для метода isIntersect или аргумент не является объектом типа Actor');
 		}
 
-		// сравнение с actor лучше отдельным if всё же
-		// вот это условие
-		// actor.left >= this.right || actor.right <= this.left || actor.top >= this.bottom || actor.bottom <= this.top
-		// можно обратить и написать просто return <условие>
-		// чтобы обратить условие нужно заменить || на && и операторы сравнения на противоположные
-		// >= на <, <= на >
-		if (actor === this || actor.left >= this.right || actor.right <= this.left || actor.top >= this.bottom || actor.bottom <= this.top) {
+		if (actor === this) {
 			return false;
 		}
-		return true;
+
+		return actor.left < this.right && actor.right > this.left && actor.top < this.bottom && actor.bottom > this.top
 	}
 }
 
@@ -92,8 +87,7 @@ class Level {
 			throw new Error('В метод actorAt должен быть передан объект типа Actor');
 		}
 
-		// (item !== actor) - лишнее условие
-		return this.actors.find(item => item.isIntersect(actor) && (item !== actor));
+		return this.actors.find(item => item.isIntersect(actor));
 	}
 
 	obstacleAt(pos, size) {
@@ -119,15 +113,9 @@ class Level {
 
 		for (let y = yTopFloor; y < yBottomCeil; y++) {
 			for (let x = xLeftFloor; x < xRightCeil; x++) {
-				// не совсем правильная проверка
-				// в this.grid[y][x] может быть только wall или lava,
-				// так что достаточно проверить, что ячейка не пустая
-				// иначе при добавлении нового препятствия придётся вносить изменения
-				// в два места из за дублирования логики
-				if (this.grid[y][x] !== 'wall' && this.grid[y][x] !== 'lava') {
-					continue;
+				if (this.grid[y][x] !== undefined) {
+					return this.grid[y][x];
 				}
-				return this.grid[y][x];
 			}
 		}
 	}
@@ -153,11 +141,7 @@ class Level {
 			return;
 		}
 
-		// проверку actor в принципе можно убрать -
-		// предполагается, что он будет всегда передаваться,
-		// а если где-то его всё таки не передадут, то код не выдаст ошибку
-		// и будет сложнее заметить баг
-		if (obstacle === 'coin' && actor && actor.type === 'coin') {
+		if (obstacle === 'coin' && actor.type === 'coin') {
 			this.removeActor(actor);
 			if (this.noMoreActors('coin')) {
 				this.status = 'won';
@@ -189,23 +173,19 @@ class LevelParser {
 	}
 
 	createActors(plan) {
-		return plan.reduce((actors, row, y) => {
-			// здесь можно использовать обычный цикл for,
-			// чтобы лишний раз не создавать массив из строки
-            row.split('')
-                .forEach((symbol, x) => {
-                    const TypeOfObj = this.actorFromSymbol(symbol);
-                    // здесь достаточно typeof
-					// typeof undefined === 'function' -> false
-                    if (TypeOfObj && typeof TypeOfObj === 'function') {
-                    	const actor = new TypeOfObj(new Vector(x, y));
-                    	if (actor instanceof Actor) {
-                    		actors.push(actor);
-                    	}
-                    }
-                });
-            return actors;
-        }, []);
+		const actors = [];
+		for(let y = 0; y < plan.length; y++) {
+			for(let x = 0; x < plan[y].length; x++) {
+				const TypeOfObj = this.actorFromSymbol(plan[y][x]);
+	            if (typeof TypeOfObj === 'function') {
+	            	const actor = new TypeOfObj(new Vector(x, y));
+	            	if (actor instanceof Actor) {
+	            		actors.push(actor);
+	            	}
+	            }
+			}
+		}
+		return actors;
 	}
 
 	parse(plan) {
@@ -227,6 +207,7 @@ class Coin extends Actor {
 	constructor(pos = new Vector(0, 0)) {
 		super(pos.plus(new Vector(0.2, 0.1)), new Vector(0.6, 0.6), new Vector(0, 0));
 
+		this.startPos = this.pos;
 		this.springSpeed = 8;
 		this.springDist = 0.07;
 		this.spring = Math.random() * 2 * Math.PI;
@@ -246,10 +227,10 @@ class Coin extends Actor {
 
 	getNextPosition(time = 1) {
 		this.updateSpring(time);
-		return this.pos.plus(this.getSpringVector());
+		return this.startPos.plus(this.getSpringVector());
 	}
 
-	act(time) {
+	act(time, level) {
 		this.pos = this.getNextPosition(time);
 	}	
 }
