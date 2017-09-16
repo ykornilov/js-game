@@ -113,7 +113,7 @@ class Level {
 
 		for (let y = yTopFloor; y < yBottomCeil; y++) {
 			for (let x = xLeftFloor; x < xRightCeil; x++) {
-				if (this.grid[y][x] !== undefined) {
+				if (this.grid[y][x]) {
 					return this.grid[y][x];
 				}
 			}
@@ -177,12 +177,12 @@ class LevelParser {
 		for(let y = 0; y < plan.length; y++) {
 			for(let x = 0; x < plan[y].length; x++) {
 				const TypeOfObj = this.actorFromSymbol(plan[y][x]);
-	            if (typeof TypeOfObj === 'function') {
-	            	const actor = new TypeOfObj(new Vector(x, y));
-	            	if (actor instanceof Actor) {
-	            		actors.push(actor);
-	            	}
-	            }
+				if (typeof TypeOfObj === 'function') {
+					const actor = new TypeOfObj(new Vector(x, y));
+					if (actor instanceof Actor) {
+						actors.push(actor);
+					}
+				}
 			}
 		}
 		return actors;
@@ -232,7 +232,7 @@ class Coin extends Actor {
 
 	act(time, level) {
 		this.pos = this.getNextPosition(time);
-	}	
+	}
 }
 
 class Fireball extends Actor {
@@ -249,7 +249,7 @@ class Fireball extends Actor {
 	}
 
 	handleObstacle() {
-		this.speed = this.speed.times(-1); 
+		this.speed = this.speed.times(-1);
 	}
 
 	act(time, level) {
@@ -292,7 +292,7 @@ const actorDict = {
   'o': Coin,
   '=': HorizontalFireball,
   '|': VerticalFireball
-}; 
+};
 const parser = new LevelParser(actorDict);
 
 loadLevels()
